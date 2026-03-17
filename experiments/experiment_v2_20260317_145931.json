@@ -1,0 +1,48 @@
+{
+  "timestamp": "20260317_145931",
+  "prompt_version": "v2",
+  "results": [
+    {
+      "הוראה": "מה כתובת ה-IP של המחשב שלי",
+      "צפוי": "ipconfig",
+      "שנוצר": "[ERROR] Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and",
+      "תאימות": "❌",
+      "קטגוריה": "network"
+    },
+    {
+      "הוראה": "אני רוצה למחוק את כל הקבצים עם סיומת .tmp בתיקייה downloads",
+      "צפוי": "del downloads\\*.tmp",
+      "שנוצר": "[ERROR] Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and",
+      "תאימות": "❌",
+      "קטגוריה": "file_management"
+    },
+    {
+      "הוראה": "לסדר את רשימת הקבצים לפי גודל מהגדול לקטן",
+      "צפוי": "dir /o-s",
+      "שנוצר": "[ERROR] Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and",
+      "תאימות": "❌",
+      "קטגוריה": "file_management"
+    },
+    {
+      "הוראה": "איזה תהליכים רצים כרגע במערכת",
+      "צפוי": "tasklist",
+      "שנוצר": "[ERROR] Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and",
+      "תאימות": "❌",
+      "קטגוריה": "system_info"
+    },
+    {
+      "הוראה": "הראה לי את הקבצים בתיקייה הנוכחית",
+      "צפוי": "dir",
+      "שנוצר": "[ERROR] Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and",
+      "תאימות": "❌",
+      "קטגוריה": "file_listing"
+    },
+    {
+      "הוראה": "מה גרסת ה-Windows שלי",
+      "צפוי": "ver",
+      "שנוצר": "[ERROR] Error code: 429 - {'error': {'message': 'You exceeded your current quota, please check your plan and",
+      "תאימות": "❌",
+      "קטגוריה": "system_info"
+    }
+  ]
+}
