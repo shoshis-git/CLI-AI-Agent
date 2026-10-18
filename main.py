@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from click import prompt
@@ -39,27 +40,18 @@ Your task: Convert a natural-language text into a SINGLE Windows command-line in
 
 Rules:
 1. Return only a command, with no explanations.
-2. If the instruction is unclear, return the most reasonable CLI command.
-3. If no relevant command exists, return: "UNKNOWN".
-4. Do not add quotes unless required by Windows CLI.
-5. Output must be a valid Windows command.
-6 
-1. If the input is a standard Windows library folder (e.g., סרטי וידאו,הורדות, מסמכים, תמונות), return only the official English name (e.g., Downloads, Documents, Pictures).
-2. If the folder name is not a standard system folder, 'write it in the same language like write in the prompt.
-3.only in תקיה חדשה or תיקיה חדשהdont write it in english because its not a standard folder name write it תיקיה חדשה instead.
+2. If the instruction is ambiguous or missing required details, return "CLARIFICATION_REQUIRED: <brief question>". Do not guess.
+3. If no relevant command exists, return "UNKNOWN".
+4. Do not generate commands that delete, overwrite, modify, install, or shut down anything.
+5. Return only a read-only Windows command, with no explanations or code fences.
+6. Never chain commands, use pipes, or use input/output redirection.
+7. For standard Windows folders, use their official English names (Downloads, Documents, Pictures, Desktop, Music, Videos). Keep custom folder names in the language used by the user.
 
 Examples:
-- "הורדות" -> Downloads
-- "מסמכים" -> Documents
-- "שולחן העבודה" -> Desktop
-- "מוזיקה" -> Music
-- "סרטי וידאו" -> Videos
-- "תמונות" -> Pictures
-7. Ensure the command is syntactically correct for Windows.
-Examples:
 - "מה כתובת ה-IP שלי" → ipconfig
-- "מחק קבצי tmp בתיקייה downloads" → del downloads\\*.tmp
+- "מחק קבצי tmp בתיקייה downloads" → UNKNOWN
 - "סדר את הקבצים מהגדול לקטן" → dir /o-s
+- "הצג את הקבצים" → CLARIFICATION_REQUIRED: באיזו תיקייה?
 
 Now convert the following instruction into a Windows CLI command:
 """
@@ -82,7 +74,7 @@ TEST_CASES = [
     },
     {
         "instruction": "תביא את כל קבצי הpdf שקיימים בתקית אוטומציה שבתוך תקית  תכנות שבתוך תקית מסמכים",
-        "expected": "dir Documents\תכנות\אוטומציה\*.pdf",
+        "expected": r"dir Documents\תכנות\אוטומציה\*.pdf",
         "category": "file_management"
     },
     {
@@ -159,11 +151,54 @@ MOCK_RESPONSES = {
 }
 
 
+SAFE_COMMANDS = {
+    "dir",
+    "ipconfig",
+    "tasklist",
+    "ver",
+    "systeminfo",
+    "whoami",
+    "get-childitem",
+    "get-process",
+    "get-netipaddress",
+}
+
+
+def validate_command(command):
+    """Allow only a single command from the read-only command allowlist."""
+    command = (command or "").strip()
+    if not command:
+        return "CLARIFICATION_REQUIRED: Please enter an instruction."
+
+    if command.upper().startswith("CLARIFICATION_REQUIRED:") or command.upper() == "UNKNOWN":
+        return command
+
+    if re.search(r"[\r\n;&|<>`$()%!^]", command):
+        return "BLOCKED: Multi-command input and shell operators are not allowed."
+
+    match = re.match(r"([A-Za-z][A-Za-z0-9_-]*)", command)
+    if not match or match.group(1).lower() not in SAFE_COMMANDS:
+        return "BLOCKED: This command is not on the read-only allowlist. Review it manually; it was not executed."
+
+    if match.group(1).lower() == "ipconfig" and re.search(
+        r"/(release|renew|flushdns|registerdns|setclassid)", command, re.IGNORECASE
+    ):
+        return "BLOCKED: This ipconfig option changes network configuration."
+
+    return command
+
 
 
 def generate_command(instruction, prompt_version="v1"):
+    if not instruction or not instruction.strip():
+        return validate_command("")
+
     if USE_MOCK:
-        return MOCK_RESPONSES.get(instruction, f"[DEMO] {instruction[:20]}...")
+        mock_response = MOCK_RESPONSES.get(
+            instruction,
+            "CLARIFICATION_REQUIRED: Add this instruction to MOCK_RESPONSES or configure the API.",
+        )
+        return validate_command(mock_response)
     
     try:
         prompt = PROMPTS.get(prompt_version, PROMPT_V1)
@@ -176,7 +211,7 @@ def generate_command(instruction, prompt_version="v1"):
             temperature=0.1
         )
 
-        return response.choices[0].message.content.strip()
+        return validate_command(response.choices[0].message.content)
     except Exception as e:
         if "429" in str(e):
             return "❌ שגיאת מכסה (Quota): אין יתרה בחשבון OpenAI או שקצב הבקשות מהיר מדי."

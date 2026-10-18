@@ -169,11 +169,9 @@ Improved formatting, better instructions, technical constraints.
 
 ## 🛡️ Safety Considerations
 
-⚠️ **Note**: The commands generated are Windows CLI commands. In production, you would want:
-- ✅ Command validation
-- ✅ Whitelist of allowed commands
-- ✅ User confirmation before execution
-- ✅ Logging and audit trails
+Generated commands are **displayed only and are never executed by this application**. The app currently applies a conservative allowlist of read-only commands, blocks shell operators and selected network-changing options, and asks for clarification when a request is unclear. Run the offline safety tests with `uv run python -m unittest test_safety`.
+
+This is a basic safeguard, not a complete security boundary. Before adding command execution, implement stricter argument validation, explicit user confirmation for each command, and audit logging. Do not rely on model output or this allowlist alone to authorize execution.
 
 ## 🔧 Technical Details
 
